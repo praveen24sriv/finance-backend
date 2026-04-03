@@ -4,6 +4,7 @@ dist
 .gitignore
 .env
 .env.*
+!.env.example
 coverage
 *.log
 README.md
