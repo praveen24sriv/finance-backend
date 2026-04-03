@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: Finance Dashboard Backend API
+  version: 1.0.0
+  description: REST API for finance records, users, and dashboard analytics.
+servers:
+  - url: http://localhost:3000/api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          nullable: true
+        meta:
+          type: object
+          nullable: true
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    TransactionRequest:
+      type: object
+      required: [amount, type, category, date]
+      properties:
+        amount:
+          type: number
+          format: double
+        type:
+          type: string
+          enum: [INCOME, EXPENSE]
+        category:
+          type: string
+        date:
+          type: string
+          format: date-time
+        notes:
+          type: string
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user (default VIEWER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+  /auth/login:
+    post:
+      summary: Login and receive JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+  /transactions:
+    get:
+      summary: List transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100 }
+        - in: query
+          name: type
+          schema: { type: string, enum: [INCOME, EXPENSE] }
+      responses:
+        '200':
+          description: Transactions fetched
+    post:
+      summary: Create transaction (ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '201':
+          description: Transaction created
+  /transactions/{id}:
+    get:
+      summary: Get transaction by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transaction fetched
+    patch:
+      summary: Update transaction (ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated
+    delete:
+      summary: Soft-delete transaction (ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Transaction deleted
+  /dashboard/overview:
+    get:
+      summary: Dashboard overview metrics
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Overview fetched
+  /users:
+    get:
+      summary: List users (ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Users fetched
+    post:
+      summary: Create user (ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
